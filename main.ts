@@ -54,12 +54,15 @@ const BANNED_PHRASES = [
 
 function validate(line: string): string[] {
   const problems: string[] = [];
-  if (line.length < MIN_CHARS) {
+  // Count code points, not UTF-16 units, so the 140 cap matches
+  // the gate's character count even if a line ever holds non-ASCII.
+  const chars = [...line].length;
+  if (chars < MIN_CHARS) {
     problems.push(`line is empty (needs at least ${MIN_CHARS} character)`);
   }
-  if (line.length > MAX_CHARS) {
+  if (chars > MAX_CHARS) {
     problems.push(
-      `line is ${line.length} characters, over the ${MAX_CHARS} cap`,
+      `line is ${chars} characters, over the ${MAX_CHARS} cap`,
     );
   }
   if (line.trim().length === 0) {
@@ -67,6 +70,9 @@ function validate(line: string): string[] {
   }
   if (line.trim() !== line) {
     problems.push("line has leading or trailing whitespace");
+  }
+  if (line.includes("\n") || line.includes("\r")) {
+    problems.push("line spans more than one line, so it is not one line");
   }
   const lower = line.toLowerCase();
   for (const phrase of BANNED_PHRASES) {
